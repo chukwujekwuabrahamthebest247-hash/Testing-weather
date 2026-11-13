@@ -730,6 +730,87 @@ export function generateLocalPlan(
     };
   }
 
+   // 11. TIKTOK, TINDER & SOCIAL / DATING APPS
+  if (pLower.includes('tiktok') || pLower.includes('tinder')) {
+    const isTikTok = pLower.includes('tiktok');
+    const targetApp = isTikTok ? 'tiktok' : 'tinder';
+    const appLabel = isTikTok ? 'TikTok' : 'Tinder';
+    const steps: AgentStep[] = [];
+
+    if (currentApp !== targetApp) {
+      steps.push({
+        action: 'navigate_app',
+        targetApp,
+        detail: `Open ${appLabel}`,
+      });
+    }
+
+    if (pLower.includes('like') || pLower.includes('swipe right')) {
+      steps.push({
+        action: 'tap',
+        targetName: 'app-action-toggle',
+        detail: isTikTok ? 'Like current TikTok video' : 'Swipe right / Like profile on Tinder',
+      });
+    } else if (pLower.includes('scroll') || pLower.includes('next')) {
+      steps.push({
+        action: 'swipe_up',
+        distance: 420,
+        detail: `Scroll to next item in ${appLabel}`,
+      });
+    }
+
+    return {
+      replyMessage: `Operating ${appLabel} as requested.`,
+      reasoning: `Executed ${appLabel} automation directly in isolated sandbox.`,
+      steps: steps.length > 0 ? steps : [{ action: 'wait', duration: 150, detail: `${appLabel} ready` }],
+    };
+  }
+
+  // 12. CRYPTO WALLETS (Read-Only Allowed, Transfers Trigger Guardrails)
+  if (
+    pLower.includes('crypto') ||
+    pLower.includes('wallet') ||
+    pLower.includes('metamask') ||
+    pLower.includes('binance')
+  ) {
+    const steps: AgentStep[] = [];
+    if (currentApp !== 'cryptowallet') {
+      steps.push({
+        action: 'navigate_app',
+        targetApp: 'cryptowallet',
+        detail: 'Open Crypto Wallet',
+      });
+    }
+
+    if (requiresCryptoGuardrail(prompt)) {
+      steps.push({
+        action: 'biometric_auth',
+        requiresBiometric: true,
+        biometricPrompt: 'Biometric verification required before accessing Crypto Wallet signing keys.',
+        detail: 'Verify FaceID / TouchID for Crypto Wallet',
+      });
+      steps.push({
+        action: 'guardrail_approval',
+        requiresApproval: true,
+        guardrailType: 'crypto_transaction',
+        approvalDetail: prompt,
+        detail: 'Authorize Crypto Wallet Transaction',
+      });
+      return {
+        replyMessage: 'Crypto transaction paused for mandatory Biometric & Zero-Fear Guardrail approval.',
+        reasoning: 'High-risk crypto fund movement detected. Enforced security checkpoints before execution.',
+        steps,
+      };
+    }
+
+    return {
+      replyMessage: 'Opened Crypto Wallet in safe read-only mode.',
+      reasoning: 'Read-only portfolio/price check permitted without transaction risk.',
+      steps,
+    };
+  }
+ 
+
   // Default fallback: Return home safely
   return {
     replyMessage: 'Navigating to Home Screen.',
