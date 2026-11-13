@@ -53,17 +53,72 @@ export function isOrdinalSearchResultIntent(text: string): boolean {
   return hasAction && hasTarget;
 }
 
-export function checkDisallowedAppRequest(prompt: string): { isDisallowed: boolean; appName?: string; reason?: string } {
+/**
+ * Strictly blocks infrastructure and security threats while allowing
+ * TikTok, Tinder, social apps, and read-only Crypto Wallet monitoring.
+ */
+export function checkDisallowedAppRequest(prompt: string): {
+  isDisallowed: boolean;
+  appName?: string;
+  reason?: string;
+} {
   const lower = prompt.toLowerCase();
-  // Only block severe server/security threats; allow TikTok, Tinder, and guarded Crypto viewing
-  const disallowed = ['jailbreak', 'torrent', 'pirate', 'root device', 'bypass security'];
+
+  // Keep server-banning and container-escape threats permanently blocked
+  const disallowed = [
+    'jailbreak',
+    'torrent',
+    'pirate',
+    'root device',
+    'bypass security',
+    'sideload',
+  ];
+
   for (const item of disallowed) {
     if (lower.includes(item)) {
       return {
         isDisallowed: true,
         appName: item,
-        reason: `Action "${item}" is restricted to protect cloud container integrity and compliance.`,
+        reason: `Action "${item}" is permanently blocked to protect cloud container security and server compliance.`,
       };
+    }
+  }
+
+  return { isDisallowed: false };
+}
+
+/**
+ * Detects if a prompt involves high-risk Crypto Wallet fund movements
+ * so the agent enforces Biometric + Zero-Fear Action Guardrail approval.
+ */
+export function requiresCryptoGuardrail(prompt: string): boolean {
+  const lower = prompt.toLowerCase();
+  const isCryptoContext =
+    lower.includes('crypto') ||
+    lower.includes('wallet') ||
+    lower.includes('metamask') ||
+    lower.includes('trust wallet') ||
+    lower.includes('phantom') ||
+    lower.includes('binance') ||
+    lower.includes('coinbase') ||
+    lower.includes('usdt') ||
+    lower.includes('btc') ||
+    lower.includes('eth') ||
+    lower.includes('sol');
+
+  const isHighRiskAction =
+    lower.includes('send') ||
+    lower.includes('transfer') ||
+    lower.includes('swap') ||
+    lower.includes('withdraw') ||
+    lower.includes('sign') ||
+    lower.includes('approve') ||
+    lower.includes('export key') ||
+    lower.includes('seed phrase');
+
+  return isCryptoContext && isHighRiskAction;
+}
+
     }
   }
   return { isDisallowed: false };
