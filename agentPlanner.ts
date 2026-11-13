@@ -55,15 +55,20 @@ export function isOrdinalSearchResultIntent(text: string): boolean {
 
 export function checkDisallowedAppRequest(prompt: string): { isDisallowed: boolean; appName?: string; reason?: string } {
   const lower = prompt.toLowerCase();
-  const disallowed = ['tiktok', 'tinder', 'cryptowallet', 'sideload', 'jailbreak', 'torrent'];
+  // Only block severe server/security threats; allow TikTok, Tinder, and guarded Crypto viewing
+  const disallowed = ['jailbreak', 'torrent', 'pirate', 'root device', 'bypass security'];
   for (const item of disallowed) {
     if (lower.includes(item)) {
       return {
         isDisallowed: true,
         appName: item,
-        reason: `Application "${item}" is restricted under enterprise compliance & zero-fear safety profile.`,
+        reason: `Action "${item}" is restricted to protect cloud container integrity and compliance.`,
       };
     }
+  }
+  return { isDisallowed: false };
+}
+
   }
   return { isDisallowed: false };
 }
